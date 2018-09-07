@@ -1,0 +1,6 @@
+*.pyc
+/rami
+.DS_Store
+settings.json
+sqlite3
+gitignore

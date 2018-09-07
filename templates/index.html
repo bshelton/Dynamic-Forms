@@ -1,0 +1,42 @@
+<html>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Home</title>
+
+        <link rel="stylesheet" type="text/css" href="../static/nav.css">
+
+
+<body>
+
+    {%include 'includes/_navbar.html' %}
+    
+<!--This loops through each form passed in from flask
+     and renders the message and submit fields on the page-->
+<div class="content">
+<form action="/createpage" method="POST">
+{{newpageForm.message }}
+{{newpageForm.submit }}
+
+</form>
+
+{% for f in forms %}
+{{counter}}
+<div>
+<form id="{{counter}}" action="/addform" method="POST">
+{{f.message}}
+{{f.submit}}
+</form>
+
+</div>
+{% endfor %}
+
+    
+        <form id="add" method="POST" action="/addform">
+        
+            <input type="submit" value="Add New Form"/>
+        
+        </form>
+
+</div>
+</body>
+
+</html>
