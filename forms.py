@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import SubmitField, StringField, validators, TextAreaField
+from wtforms.validators import InputRequired
 
 
 class DataForm(FlaskForm):
@@ -8,8 +9,12 @@ class DataForm(FlaskForm):
     submit = SubmitField('Submit')
 
 class newForm(FlaskForm):
-    message = TextAreaField('message')
-    submit = SubmitField('Submit')
+    message = TextAreaField('message',validators=[InputRequired()])
+    submit = SubmitField('Add New Page')
+
+class newPageForm(FlaskForm):
+    title = TextAreaField('title', validators=[InputRequired()])
+    submit = SubmitField('Add New Page')
 
 class lectureForm(FlaskForm):
     msg = TextAreaField(id=1,default="hi",_name="1")

@@ -1,0 +1,43 @@
+<html>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{title}}</title>
+
+        <link rel="stylesheet" type="text/css" href="../../static/nav.css">
+<body>
+
+    <ul class="sidenav">
+
+        <li><a class="active" href="/">Home</a></li>
+
+        {% for p in all_pages %}
+        <li><a href="/pages/{{p.id}}" id="{{loop.index}}">{{p.page_name}}</a> </li>
+        {% endfor %}
+    </ul>   
+<!--This loops through each form passed in from flask
+     and renders the message and submit fields on the page-->
+        <div class="content">
+       
+                <form id="notes" name="notes" method="POST" action="/savenotes/pages/{{page}}">
+            
+                <input type="submit" value="Save"/>
+
+                <ul style="list-style: none;">
+
+                        {% if numnotes > 0 %}
+                            {% for field in form1%}
+                            {% if 'msg' not in field.name %}
+                            <li> {{ field() }} </li>
+                            {%endif%}
+                        
+                            {% endfor %}
+                 </ul>
+                        {% endif %}
+                        </form>
+
+                         <form id="add" method="POST" action="/addnotefield/pages/{{page}}">         
+                            <input type="submit" value="Add Note"/>          
+                        </form>
+                </div>
+</body>
+
+</html>

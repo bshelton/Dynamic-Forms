@@ -3,11 +3,20 @@
         <title>Home</title>
 
         <link rel="stylesheet" type="text/css" href="../static/nav.css">
-
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 
 <body>
 
-    {%include 'includes/_navbar.html' %}
+    <!-- {%include 'includes/_navbar.html' %} -->
+
+    <ul class="sidenav">
+
+        <li><a class="active" href="/">Home</a></li>
+
+        {% for p in all_pages %}
+        <li><a href="/pages/{{p.id}}" id="{{loop.index}}">{{p.page_name}}</a> </li>
+        {% endfor %}
+    </ul>
     
 <!--This loops through each form passed in from flask
      and renders the message and submit fields on the page-->
@@ -17,26 +26,41 @@
 {{newpageForm.submit }}
 
 </form>
-
-{% for f in forms %}
-{{counter}}
-<div>
-<form id="{{counter}}" action="/addform" method="POST">
-{{f.message}}
-{{f.submit}}
-</form>
-
 </div>
-{% endfor %}
+<script>
+        function submitform(page){
 
-    
-        <form id="add" method="POST" action="/addform">
-        
-            <input type="submit" value="Add New Form"/>
-        
-        </form>
+                 $.ajax({
+                    url: '/postmethod',
+                    type: "POST",
+                    data: JSON.stringify({javascript_data : page}),
+                    processData: false,
+                    contentType: "application/json; charset=UTF-8",
+                    success: function(response) {
+                        console.log("Success");
+                    },
+                    error: function(error) {
+                        console.log(error);
+                    }
+                });
 
-</div>
+        }
+
+        function myFunction() {
+
+            //var x = document.getElementById("2").textContent;
+ 
+             $(document).unbind().click(function(event) {
+                 event.preventDefault();
+
+                var page = $(event.target).text();
+
+                console.log(page);
+                
+                submitform(page);
+            });
+    }
+</script>
 </body>
 
 </html>

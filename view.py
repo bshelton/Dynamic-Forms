@@ -1,36 +1,69 @@
 from rami import app, db
 from flask import url_for, render_template, request, flash
-from forms import DataForm, newForm, lectureForm
-from model import Data, studentNotes, Student
+from forms import DataForm, newForm, lectureForm, newPageForm
+from model import Data, studentNotes, Student, studentPages
 from wtforms import TextAreaField
 import os
+import json
 import sqlalchemy
 
-forms = [] # Array that holds all the forms ever created
-pagenum =0
+@app.route('/pages/<int:page>', methods=['GET'])
+def displayPage(page):
 
-lecturenotefields = []
-counter = len(lecturenotefields)
+    class F(lectureForm):
+        pass
+    print ("page: " + str(page))
+
+    all_notes = studentNotes.query.filter_by(page_id=page).all()
+    all_pages = studentPages.query.filter_by(student_id=1).all()
+    numnotes = len(all_notes)
+
+    print ("number of notes for page: " + str(numnotes))
+
+    for n in all_notes:
+        setattr(F, str(n.notenum) ,TextAreaField(default=str(n.note)))
+
+    form1 = F()
+    return render_template('pages.html', all_notes=all_notes, all_pages=all_pages, form1=form1, numnotes=numnotes, page=page)
+
+@app.route('/postmethod', methods = ['POST'])
+def get_post_javascript_data():
+    jsdata = request.json
+
+    print (jsdata['javascript_data'])
+
+
+    newpageForm = newPageForm()
+    all_pages = studentPages.query.filter_by(student_id=1).all()
+
+    return render_template('index.html', newpageForm=newpageForm, all_pages=all_pages)
 
 @app.route('/', methods=['GET','POST'])
 def index():
     newpageForm = newForm()
-    return render_template('index.html', newpageForm=newpageForm) #Renders all forms on /index.html
+    all_pages = studentPages.query.filter_by(student_id=1).all()
+    return render_template('index.html', newpageForm=newpageForm, all_pages=all_pages) #Renders all forms on /index.html
 
 @app.route('/createpage', methods=['POST'])
 def createPage():
+
     newpageForm = newForm()
 
-    global pagenum
-    filename = str(pagenum)
-    f = open("page"+filename+".html",'w+')
-    for i in range(10):
-        f.write("<html> </html>")
-    f.close()
-    pagenum = pagenum + 1
-    flash("Page Created")
+    if request.method == "POST":
+        title = request.form['message']
+        print (title)
 
-    return render_template('index.html', newpageForm=newpageForm)
+        sp = studentPages(1,title)
+        db.session.add(sp)
+        db.session.commit()
+
+        flash("Page Created")
+
+    all_pages = studentPages.query.filter_by(student_id=1).all()
+    all_notes = studentNotes.query.filter_by(page_id=all_pages[-1].id).all()
+    numnotes = len(all_notes)
+
+    return render_template('pages.html', all_pages=all_pages, newpageForm=newpageForm, title=title, numnotes=numnotes)
 
 
 @app.route('/lecture_notes', methods=['GET', 'POST'])
@@ -51,14 +84,16 @@ def lecture_notes():
 
      form1 = F()
 
-     return render_template('lecture_notes.html', notes=notes, form1=form1, numnotes=numnotes)
+     all_pages = studentPages.query.filter_by(student_id=1).all()
+
+     return render_template('lecture_notes.html', notes=notes, form1=form1, numnotes=numnotes, all_pages=all_pages)
 
 
 def get_notes():
     return studentNotes.query.filter_by(student_id=1).all()
 
-@app.route('/addnotefield', methods=['POST'])
-def addnotefield():
+@app.route('/addnotefield/pages/<int:page>', methods=['POST'])
+def addnotefield(page):
     class F(lectureForm):
         pass
 
@@ -73,32 +108,34 @@ def addnotefield():
     stu.numfields = numfields
     db.session.commit()
 
-    notes = studentNotes.query.filter_by(student_id=1).all()
-    numnotes = len(notes)
+    all_notes = studentNotes.query.filter_by(page_id=page).all()
+    all_pages = studentPages.query.filter_by(student_id=1).all()
+    numnotes = len(all_notes)
 
-    if notenum == "null":
+    print ("Page that field was added: " + str(page))
+
+    if numnotes == 0:
         print ("null")
-        note = studentNotes('',1,1)
+        note = studentNotes('',1,1,page)
         setattr(F, "1" ,TextAreaField(default="" , _name="1", id="1"))
 
         numnotes = numnotes +1
         db.session.add(note)
         db.session.commit()
     else:
-        newnote = studentNotes('', numfields, 1)
+        numnotes = numnotes + 1
+        newnote = studentNotes('', numnotes, 1, page)
         db.session.add(newnote)
         db.session.commit()
 
-        numnotes = numnotes + 1
-
         print ("numnotes: " +str(numnotes))
-        notes = studentNotes.query.filter_by(student_id=1).all()
+        notes = studentNotes.query.filter_by(student_id=1, page_id=page).all()
         for n in notes:
             print (str(n.notenum))
             setattr(F, str(n.notenum) ,TextAreaField(default=str(n.note),id=n.notenum))
 
     form1 = F()
-    return render_template('lecture_notes.html', form1=form1, numnotes=numnotes)
+    return render_template('pages.html', form1=form1, numnotes=numnotes, all_pages=all_pages, all_notes=all_notes, page=page)
 
 def getlastnotenum():
 
@@ -109,13 +146,14 @@ def getlastnotenum():
     else:
         return lastnotenum.notenum
 
-@app.route('/savenotes', methods=['POST'])
-def savenotes():
+@app.route('/savenotes/pages/<int:page>', methods=['POST'])
+def savenotes(page):
     class F(lectureForm):
         pass
+    
+    print ("Page: " + str(page))
 
     if request.method == "POST":
-        print("posted")
     
         index = 0
 
@@ -124,14 +162,12 @@ def savenotes():
 
         #number of student feilds currently
         numfields = stu.numfields
-
-        #Number of fields sent from the page
-        numsavedfields = len(request.form.getlist('text'))
   
         #Number of fields in the notes tables that the student has
-        stunotes = studentNotes.query.filter_by(student_id=1).all()
+        stunotes = studentNotes.query.filter_by(student_id=1, page_id=page).all()
         
         stunotesnum = len(stunotes)
+        print ("Number of student notes: " + str(stunotesnum))
 
         f = request.form
         for key in f.keys():
@@ -145,19 +181,6 @@ def savenotes():
                         stunotes[index].note = value
                         db.session.commit()
                         index=index+1
-                
-
-        if numfields > stunotesnum:
-            print ("student added new fields")
-
-            #Adding a new note into the db
-            newnote = studentNotes('', getlastnotenum()+1, 1)
-            db.session.add(newnote)
-            db.session.commit()
-            setattr(F,getlastnotenum()+1,'')
-            stunotesnum = stunotesnum + 1
-        else:
-            print("no fields added")
 
         index = 0
 
@@ -166,19 +189,7 @@ def savenotes():
 
         numnotes = len(notes)
         form1 = F()
-    return render_template('lecture_notes.html',notes=notes, form1=form1, numnotes=numnotes)
 
-'''
-This method will create a new form and add it the forms array
-Then it will return refresh the screen.
-'''
-@app.route('/addform', methods=['GET','POST'])
-def addform():
-    with app.app_context(): #Needed since forms is a global variable
-        if request.method == "POST": 
-            forms.append(newForm(message="asd"))
-            global counter 
-            counter = counter+1
-        
-        return render_template('index.html', forms=forms, counter=counter)
+        all_pages = studentPages.query.filter_by(student_id=1).all()
 
+    return render_template('pages.html',notes=notes, form1=form1, numnotes=numnotes, all_pages=all_pages, page=page)

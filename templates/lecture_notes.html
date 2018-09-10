@@ -60,8 +60,14 @@
         </style>
         </head>
 <body>
+        <ul class="sidenav">
 
-        {%include 'includes/_navbar.html' %}
+                <li><a class="active" href="/">Home</a></li>
+        
+                {% for p in all_pages %}
+                <li><a href="{{ url_for('.lecture_notes') }}">{{p.page_name}}</a></li>
+                {% endfor %}
+            </ul>
 
 <!--This loops through each form passed in from flask
      and renders the message and submit fields on the page-->
