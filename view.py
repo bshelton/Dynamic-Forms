@@ -1,5 +1,5 @@
 from rami import app, db
-from flask import url_for, render_template, request, flash
+from flask import url_for, render_template, request
 from forms import newForm, lectureForm, newPageForm
 from model import studentNotes, Student, studentPages
 from wtforms import TextAreaField

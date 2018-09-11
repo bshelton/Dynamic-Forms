@@ -3,11 +3,6 @@ from wtforms import SubmitField, StringField, validators, TextAreaField
 from wtforms.validators import InputRequired
 
 
-class DataForm(FlaskForm):
-    message = StringField('Data', [validators.Required()])
-    last_message = TextAreaField('LastMessage', default="add")
-    submit = SubmitField('Submit')
-
 class newForm(FlaskForm):
     message = TextAreaField('message',validators=[InputRequired()])
     submit = SubmitField('Add New Page')
